@@ -37,7 +37,7 @@ Why: Postman is a powerful tool for testing APIs during development.
 Benefit: It helps ensure that all endpoints work as expected before integrating with the frontend.
 ---
 ## Folder Structure:
-
+```
 src/
  ├── components/
  │   ├── admin/
@@ -66,6 +66,7 @@ src/
  ├── package.json
  ├── package-lock.json
  └── app.js
+```
 ---
 
 ## **Features**
