@@ -35,6 +35,7 @@ Benefit: It protects user data by ensuring passwords are not stored in plain tex
 Why: Postman is a powerful tool for testing APIs during development.
 
 Benefit: It helps ensure that all endpoints work as expected before integrating with the frontend.
+
 ---
 ## Folder Structure:
 ```
