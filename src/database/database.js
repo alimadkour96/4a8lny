@@ -1,85 +1,92 @@
+const mongoose = require('mongoose');
+const { dbConfig, createIndexes, healthCheck, getStats } = require('./config');
+require('dotenv').config();
 
-// const mongoose = require('mongoose');
-// //const dotenv = require('dotenv');
+const connectDB = async () => {
+    try {
+        const connectionString = process.env.CONNECTION_STRING || 'mongodb://localhost:27017/4a8lny';
+        
+        console.log('🔌 Connecting to MongoDB...');
+        console.log(`📊 Database: ${connectionString.split('/').pop()}`);
+        
+        await mongoose.connect(connectionString, dbConfig.options);
+        
+        console.log('✅ MongoDB connected successfully');
+        console.log(`📊 Database: ${mongoose.connection.name}`);
+        console.log(`🔗 Host: ${mongoose.connection.host}`);
+        console.log(`🚪 Port: ${mongoose.connection.port}`);
+        console.log(`🔧 Mongoose version: ${mongoose.version}`);
+        
+        // Create indexes after connection
+        await createIndexes();
+        
+        // Log initial stats
+        const stats = await getStats();
+        if (stats) {
+            console.log('📈 Database Statistics:');
+            console.log(`   Companies: ${stats.companies}`);
+            console.log(`   Jobs: ${stats.jobs}`);
+            console.log(`   Employees: ${stats.employees}`);
+            console.log(`   Applications: ${stats.applications}`);
+            console.log(`   Questions: ${stats.questions}`);
+            console.log(`   Answers: ${stats.answers}`);
+            console.log(`   Total Documents: ${stats.total}`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error connecting to MongoDB:', error.message);
+        console.error('🔍 Error details:', error);
+        process.exit(1);
+    }
+};
 
-// // Load environment variables
-// //dotenv.config();
+// Handle connection events
+mongoose.connection.on('error', (err) => {
+    console.error('❌ MongoDB connection error:', err.message);
+    console.error('🔍 Error details:', err);
+});
 
-// const connectDB = async () => {
-//   try {
-//     await mongoose.connect(process.env.DB_URI, {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
-//     console.log('MongoDB connected');
-//   } catch (error) {
-//     console.error('Error connecting to MongoDB:', error);
-//     process.exit(1); // Exit process with failure
-//   }
-// };
+mongoose.connection.on('disconnected', () => {
+    console.log('⚠️ MongoDB disconnected');
+});
 
-// module.exports = connectDB;
+mongoose.connection.on('reconnected', () => {
+    console.log('🔄 MongoDB reconnected');
+});
 
+mongoose.connection.on('close', () => {
+    console.log('🔒 MongoDB connection closed');
+});
 
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    try {
+        console.log('\n🔄 Shutting down gracefully...');
+        await mongoose.connection.close();
+        console.log('🔄 MongoDB connection closed through app termination');
+        process.exit(0);
+    } catch (err) {
+        console.error('❌ Error during shutdown:', err.message);
+        process.exit(1);
+    }
+});
 
-//------------------------------------------------------------------------
+process.on('SIGTERM', async () => {
+    try {
+        console.log('\n🔄 Shutting down gracefully...');
+        await mongoose.connection.close();
+        console.log('🔄 MongoDB connection closed through app termination');
+        process.exit(0);
+    } catch (err) {
+        console.error('❌ Error during shutdown:', err.message);
+        process.exit(1);
+    }
+});
 
-
-// const mongoose=require('mongoose')
-
-
-// exports.dbConnection=()=>{
-//     mongoose.connect('mongodb://localhost:27017/4a8lny').then(()=>{
-//         console.log('db connection established');
-//     }).catch((err)=>{console.log('err');})
-// }
-
-// module.exports = connectDB;
-//================================================
-const mongoose=require('mongoose')
-
-
-exports.dbConnection=()=>{
-    mongoose.connect(process.env.CONNECTION_STRING).then(()=>{
-        console.log('db connection established');
-    })
-    // .catch((err)=>{
-    //     console.log(err);
-    // })
-}
-//===============================================================
-
-// const { MongoClient } = require('mongodb');
-
-// // MongoDB connection URI
-// const mongoose = require('mongoose');
-// const uri = 'mongodb://localhost:27017'; // Replace with your MongoDB URI
-// const client = new MongoClient(uri);
-
-// async function connectToMongoDB() {
-//     try {
-//         // Connect to the MongoDB server
-//         await client.connect();
-//         console.log('Connected to MongoDB');
-
-//         // Select the database
-//         const db = client.db('4a8lny'); 
-
-//         // Perform database operations
-//         const collection = db.collection('mycollection'); 
-//         const result = await collection.insertOne({ name: 'John', age: 30 });
-//         console.log('Inserted document:', result.insertedId);
-
-//     } catch (error) {
-//         console.error('Error connecting to MongoDB:', error);
-//     } finally {
-//         // Close the connection
-//         await client.close();
-//         console.log('Disconnected from MongoDB');
-//     }
-// }
-
-// // Call the function to connect
-// connectToMongoDB();
-
-// module.exports = connectDB;
+// Export connection function and utilities
+module.exports = {
+    connectDB,
+    healthCheck,
+    getStats,
+    connection: mongoose.connection
+};
